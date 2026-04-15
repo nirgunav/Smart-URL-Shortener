@@ -1,0 +1,179 @@
+from flask import Flask, render_template, request, redirect, jsonify
+from db import get_db
+import random, string
+from datetime import datetime, timedelta
+import qrcode
+from PIL import Image
+import os
+
+app = Flask(__name__)
+
+QR_FOLDER = "static/qr"
+os.makedirs(QR_FOLDER, exist_ok=True)
+
+
+def generate_qr(url, code):
+    img = qrcode.make(url)
+    qr_path = f"{QR_FOLDER}/{code}.png"
+    img.save(qr_path)
+    return qr_path
+
+
+def generate_code():
+    return "".join(random.choices(string.ascii_letters + string.digits, k=6))
+
+
+def ai_risk(url):
+    score = 0
+    reasons = []
+    risky_words = ["login", "bank", "verify", "free", "password", "account"]
+    for word in risky_words:
+        if word in url.lower():
+            score += 2
+            reasons.append(f"Contains suspicious word: {word}")
+    digit_count = sum(c.isdigit() for c in url)
+    if digit_count > 5:
+        score += 1
+        reasons.append("Too many numbers in URL")
+    if "https" not in url:
+        score += 1
+        reasons.append("Missing HTTPS pattern,Not Secure")
+    if score >= 4:
+        return "Dangerous", score, reasons
+    elif score >= 2:
+        return "Suspicious", score, reasons
+    else:
+        return "Safe", score, reasons
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/<code>")
+def redirect_url(code):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT original_url, expiry, password, one_time, clicks
+        FROM urls
+        WHERE short_code=%s
+    """,
+        (code,),
+    )
+    result = cursor.fetchone()
+    if not result:
+        return "<h2> Link Not Found</h2>", 404
+    if result.get("expiry"):
+        expiry_time = result["expiry"]
+        if isinstance(expiry_time, str):
+            expiry_time = datetime.strptime(expiry_time, "%Y-%m-%d")
+        expiry_time = expiry_time + timedelta(days=1)
+        if datetime.now() > expiry_time:
+            return "<h2 style='color:red'>Link expired</h2>", 410
+    cursor.execute(
+        """
+        UPDATE urls 
+        SET clicks = clicks + 1,
+            last_opened = NOW()
+        WHERE short_code=%s
+    """,
+        (code,),
+    )
+    db.commit()
+    return redirect(result["original_url"])
+
+
+@app.route("/dashboard")
+def dashboard():
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT *FROM urls ORDER BY id DESC")
+    links = cursor.fetchall()
+    cursor.execute("SELECT COUNT(*) AS total FROM urls")
+    total = cursor.fetchone()["total"]
+    cursor.execute("SELECT SUM(clicks) AS clicks FROM urls")
+    clicks = cursor.fetchone()["clicks"] or 0
+    return render_template("dashboard.html", links=links, total=total, clicks=clicks)
+
+
+@app.route("/api/shorten", methods=["POST"])
+def shorten():
+    data = request.json
+    url = data.get("url")
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT short_code FROM urls WHERE original_url=%s", (url,))
+    existing = cursor.fetchone()
+    if existing:
+        risk_level, score, reasons = ai_risk(url)
+        return jsonify(
+            {
+                "short_url": f"http://127.0.0.1:5000/{existing['short_code']}",
+                "message": "Already Shortened before",
+                "qr": f"/static/qr/{existing['short_code']}.png",
+                "risk_level": risk_level,
+                "score": score,
+                "reasons": reasons,
+                "clicks": 0,
+                "last_opened": "Already exists",
+            }
+        )
+    custom = data.get("custom")
+    password = data.get("password")
+    expiry = data.get("expiry")
+    one_time = 1 if data.get("one_time") else 0
+    if expiry and expiry.strip():
+        expiry = datetime.strptime(expiry, "%Y-%m-%d")
+    else:
+        expiry = None
+
+    risk_level, score, reasons = ai_risk(url)
+    if risk_level == "Dangerous":
+        return jsonify({"error": "Blocked dangerous URL"})
+    code = custom if custom else generate_code()
+    cursor.execute("SELECT id FROM urls WHERE short_code=%s", (code,))
+    if cursor.fetchone():
+        return jsonify({"error": "Custom alias exists"})
+    cursor.execute(
+        """
+        INSERT INTO urls (original_url, short_code, expiry, password, one_time) 
+        VALUES (%s,%s,%s,%s,%s)
+    """,
+        (url, code, expiry, password, one_time),
+    )
+    db.commit()
+    short_url = f"http://127.0.0.1:5000/{code}"
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
+    qr.add_data(short_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    logo_path = "static/logo.png"
+    if os.path.exists(logo_path):
+        logo = Image.open("static/logo.png").convert("RGBA")
+        qr_w, qr_h = img.size
+        logo_size = qr_w // 4
+        logo = logo.resize((logo_size, logo_size))
+        pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+        img.paste(logo, pos, mask=logo)
+    qr_path = f"{QR_FOLDER}/{code}.png"
+    img.save(qr_path)
+    return jsonify(
+        {
+            "short_url": f"http://127.0.0.1:5000/{code}",
+            "qr": f"/{qr_path}",
+            "risk_level": risk_level,
+            "score": score,
+            "reasons": reasons,
+            "clicks": 0,
+            "last_opened": "Not opened yet",
+        }
+    )
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title> URL Shortener</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            font-family: Arial;
+            color: white;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #020617);
+        }
+
+        .box {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 30px;
+            width: 420px;
+            border-radius: 12px;
+            margin: 20px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 20px;
+            border: 4px solid white;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        .score {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        a {
+            color: #38bdf8;
+            word-break: break-all;
+        }
+
+        .small {
+            font-size: 12px;
+            color: #94a3b8
+        }
+
+        .risk {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .trust {
+            font-size: 16px;
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <h2>SMART URL SHORTENER</h2>
+
+        <input id="url" placeholder="Enter URL">
+        <input id="custom" placeholder="Custom alias">
+        <input id="password" placeholder="Password">
+        <input type="date" id="expiry">
+
+        <br><br>
+        <button onClick="shorten()">Shorten</button>
+        <div id="result"></div>
+    </div>
+    <script>
+        function shorten() {
+            let inputUrl = document.getElementById("url").value;
+            let domain = "";
+            try {
+                domain = new URL(inputUrl).hostname;
+            } catch {
+                domain = "invalid-url";
+            }
+            fetch("/api/shorten", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    url: inputUrl,
+                    custom: document.getElementById("custom").value,
+                    password: document.getElementById("password").value,
+                    expiry: document.getElementById("expiry").value,
+                    one_time: false
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.error) {
+                        document.getElementById("result").innerHTML = data.error;
+                        return;
+                    }
+                    let color =
+                        data.risk_level === "Safe" ? "#38bdf8" :
+                            data.risk_level == "Suspicious" ? "#f59e0b" :
+                                "#ef4444";
+
+                    document.getElementById("result").innerHTML = `
+           <div class="circle" style="background: ${color};color:white">
+              ${data.score}/10
+           </div>
+           <div class="risk" style="color:${color}">
+               ${data.risk_level}
+           </div>
+
+           <div class="trust">
+              Trust Score: ${100 - data.score * 10}%
+           </div>
+
+           <div class="small">
+              Domain:${domain}
+           </div>
+           <br>
+           <a href="${data.short_url}" target="_blank">${data.short_url}</a>
+           <br><br>
+          <input value="${data.short_url}" readonly>
+          <button onclick="copy()">Copy</button>
+          <br><br>
+          <!--QR-->
+          <img src="${data.qr}" width="120">
+          <br><br>
+          <div class="small">Scan QR</div>
+          <br>
+          <a href="${data.qr}"download>
+            <button>Download QR</button>
+          </a>
+          <br><br>
+          <div class="small">
+            Last Opened: ${data.last_opened}
+          </div>
+          <br>
+          <button onclick="window.open('${data.short_url}','_blank')">
+            Open Link
+          </button>
+          <br><br>
+          <a href="/dashboard">
+            <button style="margin-bottom:15px;">Go to Dashboard</button>
+          </a>
+          <br><br>
+           <div style="font-size:14px; margin-top:10px;">
+               ${data.reasons.length > 0 ? data.reasons.join("<br>") : "No issues detected"}
+           </div>
+           <br>
+          
+        `;
+                })
+                .catch((err) => {
+                    console.log(err);
+                    document.getElementById("result").innerHTML = "Backend error";
+                });
+        }
+        function copy() {
+            let input = document.querySelector("#result input");
+            input.select();
+            document.execCommand("copy");
+            alert("Copied!");
+        }
+    </script>
+</body>
+
+</html>
