@@ -103,6 +103,12 @@
 <body>
     <div class="box">
         <h2>SMART URL SHORTENER</h2>
+        <h3>Login</h3>
+        <input id="username" placeholder="Username">
+        <input id="loginPassword" type="password" placeholder=" Password">
+        <button onClick="login()">Login</button>
+        <h3>Or Create an Account</h3>
+        <br><br>
 
         <input id="url" placeholder="Enter URL">
         <input id="custom" placeholder="Custom alias">
@@ -114,7 +120,33 @@
         <div id="result"></div>
     </div>
     <script>
+        function login() {
+            fetch("/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("loginPassword").value
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem("token", data.token);
+                        alert("Login Successful");
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(err => console.log(err));
+        }
         function shorten() {
+            if (!localStorage.getItem("token")) {
+                alert("Please login first");
+                return;
+            }
             let inputUrl = document.getElementById("url").value;
             let domain = "";
             try {
@@ -124,9 +156,12 @@
             }
             fetch("/api/shorten", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + localStorage.getItem("token")
+                },
                 body: JSON.stringify({
-                    url: inputUrl,
+                    url: document.getElementById("url").value,
                     custom: document.getElementById("custom").value,
                     password: document.getElementById("password").value,
                     expiry: document.getElementById("expiry").value,
@@ -188,7 +223,9 @@
           </a>
           <br><br>
            <div style="font-size:14px; margin-top:10px;">
-               ${data.reasons.length > 0 ? data.reasons.join("<br>") : "No issues detected"}
+               ${data.reasons && data.reasons.length > 0
+                            ? data.reasons.join("<br>")
+                            : "No issues detected"}
            </div>
            <br>
           
@@ -196,7 +233,7 @@
                 })
                 .catch((err) => {
                     console.log(err);
-                    document.getElementById("result").innerHTML = "Backend error";
+                    document.getElementById("result").innerHTML = "Error Ocurred";
                 });
         }
         function copy() {

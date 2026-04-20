@@ -5,8 +5,13 @@ from datetime import datetime, timedelta
 import qrcode
 from PIL import Image
 import os
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from auth import auth
 
 app = Flask(__name__)
+app.config["JWT_SECRET_KEY"] = "super-secret-key"
+jwt = JWTManager(app)
+app.register_blueprint(auth)
 
 QR_FOLDER = "static/qr"
 os.makedirs(QR_FOLDER, exist_ok=True)
@@ -66,13 +71,6 @@ def redirect_url(code):
     result = cursor.fetchone()
     if not result:
         return "<h2> Link Not Found</h2>", 404
-    if result.get("expiry"):
-        expiry_time = result["expiry"]
-        if isinstance(expiry_time, str):
-            expiry_time = datetime.strptime(expiry_time, "%Y-%m-%d")
-        expiry_time = expiry_time + timedelta(days=1)
-        if datetime.now() > expiry_time:
-            return "<h2 style='color:red'>Link expired</h2>", 410
     cursor.execute(
         """
         UPDATE urls 
@@ -87,10 +85,12 @@ def redirect_url(code):
 
 
 @app.route("/dashboard")
+@jwt_required()
 def dashboard():
+    user_id = get_jwt_identity()
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT *FROM urls ORDER BY id DESC")
+    cursor.execute("SELECT *FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
     total = cursor.fetchone()["total"]
@@ -99,8 +99,21 @@ def dashboard():
     return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 
 
+@app.route("/api/delete/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_url(id):
+    user_id = get_jwt_identity()
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM urls WHERE id=%s AND user_id=%s", (id, user_id))
+    db.commit()
+    return jsonify({"message": "Deleted"})
+
+
 @app.route("/api/shorten", methods=["POST"])
+@jwt_required()
 def shorten():
+    user_id = get_jwt_identity()
     data = request.json
     url = data.get("url")
     if not url:
@@ -141,10 +154,10 @@ def shorten():
         return jsonify({"error": "Custom alias exists"})
     cursor.execute(
         """
-        INSERT INTO urls (original_url, short_code, expiry, password, one_time) 
-        VALUES (%s,%s,%s,%s,%s)
+        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id) 
+        VALUES (%s,%s,%s,%s,%s,%s)
     """,
-        (url, code, expiry, password, one_time),
+        (url, code, expiry, password, one_time, user_id),
     )
     db.commit()
     short_url = f"http://127.0.0.1:5000/{code}"
