@@ -43,11 +43,11 @@ def login():
         if not user:
             return jsonify({"error": "Invalid username"}), 401
         user_id = user[0]
-        stored_password = user[2]
+        stored_password = user[2].encode("utf-8")
         if not bcrypt.checkpw(password.encode("utf-8"), stored_password):
             return jsonify({"error": "Invalid password"}), 401
         token = create_access_token(identity=str(user[0]))
         return jsonify({"token": token})
     except Exception as e:
         print("LOGIN ERROR:", e)
-    return jsonify({"error": "Server error"}), 500
+        return jsonify({"error": "Server error"}), 500
