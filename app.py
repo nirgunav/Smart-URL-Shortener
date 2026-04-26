@@ -8,7 +8,7 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
-BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000")
+BASE_URL = BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__)
 
@@ -165,7 +165,7 @@ def shorten():
         risk_level, score, reasons = ai_risk(url)
         return jsonify(
             {
-                "short_url": f"http://127.0.0.1:5000/{existing['short_code']}",
+                "short_url": f"{BASE_URL}/{code}",
                 "message": "Already Shortened before",
                 "qr": f"/static/qr/{existing['short_code']}.png",
                 "risk_level": risk_level,
