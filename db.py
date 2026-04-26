@@ -1,7 +1,6 @@
-import mysql.connector
+import psycopg2
+import os
 
 
 def get_db():
-    return mysql.connector.connect(
-        host="localhost", user="root", password="Root123", database="url_project"
-    )
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))

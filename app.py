@@ -8,6 +8,8 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000")
+
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
@@ -59,7 +61,7 @@ def index():
 @app.route("/<code>")
 def redirect_url(code):
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
     cursor.execute(
         """
         SELECT original_url, expiry, password, one_time, clicks
@@ -89,7 +91,7 @@ def redirect_url(code):
 def dashboard():
     user_id = get_jwt_identity()
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
     cursor.execute("SELECT *FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
@@ -119,7 +121,7 @@ def shorten():
     if not url:
         return jsonify({"error": "URL is required"}), 400
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
     cursor.execute("SELECT short_code FROM urls WHERE original_url=%s", (url,))
     existing = cursor.fetchone()
     if existing:
@@ -177,7 +179,7 @@ def shorten():
     img.save(qr_path)
     return jsonify(
         {
-            "short_url": f"http://127.0.0.1:5000/{code}",
+            "short_url": f"{BASE_URL}/{code}",
             "qr": f"/{qr_path}",
             "risk_level": risk_level,
             "score": score,
