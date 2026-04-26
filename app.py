@@ -165,7 +165,7 @@ def shorten():
         risk_level, score, reasons = ai_risk(url)
         return jsonify(
             {
-                "short_url": f"{BASE_URL}/{code}",
+                "short_url": f"{BASE_URL}/{existing['short_code']}",
                 "message": "Already Shortened before",
                 "qr": f"/static/qr/{existing['short_code']}.png",
                 "risk_level": risk_level,
@@ -216,7 +216,7 @@ def shorten():
     img.save(qr_path)
     return jsonify(
         {
-            "short_url": f"{BASE_URL}/{existing['short_code']}",
+            "short_url": f"{BASE_URL}/{code}",
             "qr": f"/{qr_path}",
             "risk_level": risk_level,
             "score": score,
