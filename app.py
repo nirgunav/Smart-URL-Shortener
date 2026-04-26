@@ -11,6 +11,40 @@ from auth import auth
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000")
 
 app = Flask(__name__)
+
+
+def create_tables():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute(
+        """ 
+                   CREATE TABLE IF NOT EXISTS users (
+                   id SERIAL PRIMARY KEY,
+                   username TEXT UNIQUE,
+                   password TEXT
+                   );
+                   """
+    )
+    cursor.execute(
+        """
+                   CREATE TABLE IF NOT EXISTS urls (
+                   id SERIAL PRIMARY KEY,
+                   original_url TEXT,
+                   short_code TEXT UNIQUE,
+                   expiry TIMESTAMP,
+                   password TEXT,
+                   one_time INTEGER,
+                   cclicks INTEGER DEFAULT 0,
+                   last_opened TIMESTAMP,
+                   user_id INTEGER
+                   );
+                   """
+    )
+    db.commit()
+    cursor.close()
+    db.close()
+
+
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
 app.register_blueprint(auth)
