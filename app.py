@@ -45,6 +45,9 @@ def create_tables():
     db.close()
 
 
+create_tables()
+
+
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
 app.register_blueprint(auth)
