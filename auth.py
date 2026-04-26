@@ -43,7 +43,9 @@ def login():
         if not user:
             return jsonify({"error": "Invalid username"}), 401
         user_id = user[0]
-        stored_password = user[2].encode("utf-8")
+        stored_password = user[2]
+        if isinstance(stored_password, str):
+            stored_password = stored_password.encode("utf-8")
         if not bcrypt.checkpw(password.encode("utf-8"), stored_password):
             return jsonify({"error": "Invalid password"}), 401
         token = create_access_token(identity=str(user[0]))
