@@ -110,12 +110,14 @@
         <br><br>
         <button onClick="signup()">Create Account</button>
         <hr>
-        <h3>Login</h3>
-        <input id="username" placeholder="Username">
-        <input id="loginPassword" type="password" placeholder=" Password">
-        <br><br>
-        <button onClick="login()">Login</button>
-        <br><br>
+        <div id="loginSection">
+            <h3>Login</h3>
+            <input id="username" placeholder="Username">
+            <input id="loginPassword" type="password" placeholder=" Password">
+            <br><br>
+            <button onClick="login()">Login</button>
+            <br><br>
+        </div>
 
         <div id="shortenSection" style="display:none;">
             <input id="url" placeholder="Enter URL to shorten">
@@ -143,7 +145,6 @@
                         alert(data.message || data.error);
                     });
             }
-
             function login() {
                 fetch("/login", {
                     method: "POST",
@@ -159,8 +160,9 @@
                     .then(data => {
                         if (data.token) {
                             localStorage.setItem("token", data.token);
-                            alert("Login Successful");
                             document.getElementById("shortenSection").style.display = "block";
+                            document.querySelector(".loginBox")?.remove();
+                            alert("Welcome back!");
                         } else {
                             alert(data.error);
                         }
@@ -266,6 +268,13 @@
                 input.select();
                 document.execCommand("copy");
                 alert("Copied!");
+            }
+            window.onload = function () {
+                let token = localStorage.getItem("token");
+                if (token) {
+                    document.getElementById("shortenSection").style.display = "block";
+
+                }
             }
         </script>
 </body>
