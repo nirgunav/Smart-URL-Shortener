@@ -8,7 +8,7 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
-BASE_URL = BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
+BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__)
 
@@ -34,7 +34,7 @@ def create_tables():
                    expiry TIMESTAMP,
                    password TEXT,
                    one_time INTEGER,
-                   cclicks INTEGER DEFAULT 0,
+                   clicks INTEGER DEFAULT 0,
                    last_opened TIMESTAMP,
                    user_id INTEGER
                    );
@@ -199,7 +199,7 @@ def shorten():
         (url, code, expiry, password, one_time, user_id),
     )
     db.commit()
-    short_url = f"http://127.0.0.1:5000/{code}"
+    short_url = f"{BASE_URL}/{code}"
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
     qr.add_data(short_url)
     qr.make(fit=True)
@@ -216,7 +216,7 @@ def shorten():
     img.save(qr_path)
     return jsonify(
         {
-            "short_url": f"{BASE_URL}/{code}",
+            "short_url": f"{BASE_URL}/{existing['short_code']}",
             "qr": f"/{qr_path}",
             "risk_level": risk_level,
             "score": score,

@@ -34,7 +34,7 @@ def login():
     username = data.get("username")
     password = data.get("password")
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
     user = cursor.fetchone()
     if not user:

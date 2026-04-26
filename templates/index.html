@@ -103,83 +103,109 @@
 <body>
     <div class="box">
         <h2>SMART URL SHORTENER</h2>
+        <h3>Sign Up</h3>
+
+        <input id="su_username" placeholder="New Username">
+        <input id="su_password" type="password" placeholder="New Password">
+        <br><br>
+        <button onClick="signup()">Create Account</button>
+        <hr>
         <h3>Login</h3>
         <input id="username" placeholder="Username">
-        <input id="loginPassword" type="password" placeholder=" Password"><br><br>
+        <input id="loginPassword" type="password" placeholder=" Password">
+        <br><br>
         <button onClick="login()">Login</button>
         <br><br>
 
-        <input id="url" placeholder="Enter URL">
-        <input id="custom" placeholder="Custom alias">
-        <input id="password" placeholder="Password">
-        <input type="date" id="expiry">
+        <div id="shortenSection" style="display:none;">
+            <input id="url" placeholder="Enter URL to shorten">
+            <input id="custom" placeholder="Custom alias">
+            <input id="password" placeholder="Password">
+            <input type="date" id="expiry">
 
-        <br><br>
-        <button onClick="shorten()">Shorten</button>
-        <div id="result"></div>
-    </div>
-    <script>
-        function login() {
-            fetch("/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: document.getElementById("username").value,
-                    password: document.getElementById("loginPassword").value
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.token) {
-                        localStorage.setItem("token", data.token);
-                        alert("Login Successful");
-                    } else {
-                        alert(data.error);
-                    }
-                })
-                .catch(err => console.log(err));
-        }
-        function shorten() {
-            if (!localStorage.getItem("token")) {
-                alert("Please login first");
-                return;
-            }
-            let inputUrl = document.getElementById("url").value;
-            let domain = "";
-            try {
-                domain = new URL(inputUrl).hostname;
-            } catch {
-                domain = "invalid-url";
-            }
-            fetch("/api/shorten", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + localStorage.getItem("token")
-                },
-                body: JSON.stringify({
-                    url: document.getElementById("url").value,
-                    custom: document.getElementById("custom").value,
-                    password: document.getElementById("password").value,
-                    expiry: document.getElementById("expiry").value,
-                    one_time: false
-                })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    console.log(data);
-                    if (data.error) {
-                        document.getElementById("result").innerHTML = data.error;
-                        return;
-                    }
-                    let color =
-                        data.risk_level === "Safe" ? "#38bdf8" :
-                            data.risk_level == "Suspicious" ? "#f59e0b" :
-                                "#ef4444";
+            <br><br>
+            <button onClick="shorten()">Shorten</button>
+            <div id="result"></div>
+        </div>
+        <script>
+            function signup() {
+                fetch("/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: document.getElementById("su_username").value,
+                        password: document.getElementById("su_password").value
+                    })
 
-                    document.getElementById("result").innerHTML = `
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert(data.message || data.error);
+                    });
+            }
+
+            function login() {
+                fetch("/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: document.getElementById("username").value,
+                        password: document.getElementById("loginPassword").value
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.token) {
+                            localStorage.setItem("token", data.token);
+                            alert("Login Successful");
+                            document.getElementById("shortenSection").style.display = "block";
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(err => console.log(err));
+            }
+            function shorten() {
+                if (!localStorage.getItem("token")) {
+                    alert("Please login first");
+                    return;
+                }
+                let inputUrl = document.getElementById("url").value;
+                let domain = "";
+                try {
+                    domain = new URL(inputUrl).hostname;
+                } catch {
+                    domain = "invalid-url";
+                }
+                fetch("/api/shorten", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    },
+                    body: JSON.stringify({
+                        url: document.getElementById("url").value,
+                        custom: document.getElementById("custom").value,
+                        password: document.getElementById("password").value,
+                        expiry: document.getElementById("expiry").value,
+                        one_time: false
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log(data);
+                        if (data.error) {
+                            document.getElementById("result").innerHTML = data.error;
+                            return;
+                        }
+                        let color =
+                            data.risk_level === "Safe" ? "#38bdf8" :
+                                data.risk_level == "Suspicious" ? "#f59e0b" :
+                                    "#ef4444";
+
+                        document.getElementById("result").innerHTML = `
            <div class="circle" style="background: ${color};color:white">
               ${data.score}/10
            </div>
@@ -223,25 +249,25 @@
           <br><br>
            <div style="font-size:14px; margin-top:10px;">
                ${data.reasons && data.reasons.length > 0
-                            ? data.reasons.join("<br>")
-                            : "No issues detected"}
+                                ? data.reasons.join("<br>")
+                                : "No issues detected"}
            </div>
            <br>
           
         `;
-                })
-                .catch((err) => {
-                    console.log(err);
-                    document.getElementById("result").innerHTML = "Error Ocurred";
-                });
-        }
-        function copy() {
-            let input = document.querySelector("#result input");
-            input.select();
-            document.execCommand("copy");
-            alert("Copied!");
-        }
-    </script>
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        document.getElementById("result").innerHTML = "Error Ocurred";
+                    });
+            }
+            function copy() {
+                let input = document.querySelector("#result input");
+                input.select();
+                document.execCommand("copy");
+                alert("Copied!");
+            }
+        </script>
 </body>
 
 </html>
