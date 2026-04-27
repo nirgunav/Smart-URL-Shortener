@@ -201,11 +201,16 @@
                         one_time: false
                     })
                 })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error("API failed: " + res.status);
+                        }
+                        return res.json();
+                    })
                     .then(data => {
                         console.log(data);
-                        if (data.error) {
-                            document.getElementById("result").innerHTML = data.error;
+                        if (data.short_url) {
+                            document.getElementById("result").innerHTML = "Server Error";
                             return;
                         }
                         let color =
@@ -215,14 +220,14 @@
 
                         document.getElementById("result").innerHTML = `
            <div class="circle" style="background: ${color};color:white">
-              ${data.score}/10
+              ${data.score ?? 0}/10
            </div>
            <div class="risk" style="color:${color}">
-               ${data.risk_level}
+               ${data.risk_level || "Unknown"}
            </div>
 
            <div class="trust">
-              Trust Score: ${100 - data.score * 10}%
+              Trust Score: ${data.score ? 100 - data.score * 10 : 0}% 
            </div>
 
            <div class="small">
@@ -235,7 +240,7 @@
           <button onclick="copy()">Copy</button>
           <br><br>
           <!--QR-->
-          <img src="${data.qr}" width="120">
+          <img src="${window.location.origin + data.qr}" width="120">
           <br><br>
           <div class="small">Scan QR</div>
           <br>
