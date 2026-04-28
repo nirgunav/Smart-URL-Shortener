@@ -76,7 +76,7 @@ def create_tables():
 create_tables()
 
 
-app.config["JWT_SECRET_KEY"] = "super-secret-key"
+app.config["JWT_SECRET_KEY"] = "super-secret-key-very-long-at-least-32-characters"
 jwt = JWTManager(app)
 app.register_blueprint(auth)
 
