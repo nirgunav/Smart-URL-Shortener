@@ -161,9 +161,9 @@ def dashboard():
     cursor.execute("SELECT * FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
-    total = cursor.fetchone()["total"]
+    total = cursor.fetchone()[0]
     cursor.execute("SELECT SUM(clicks) AS clicks FROM urls")
-    clicks = cursor.fetchone()["clicks"] or 0
+    clicks = cursor.fetchone()[0]
     return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 
 
@@ -194,9 +194,9 @@ def shorten():
         risk_level, score, reasons = ai_risk(url)
         return jsonify(
             {
-                "short_url": f"{BASE_URL}/{existing['short_code']}",
+                "short_url": f"{BASE_URL}/{existing[0]}",
                 "message": "Already Shortened before",
-                "qr": f"/static/qr/{existing['short_code']}.png",
+                "qr": f"/static/qr/{existing[0]}.png",
                 "risk_level": risk_level,
                 "score": score,
                 "reasons": reasons,
