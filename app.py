@@ -18,14 +18,14 @@ def test():
     return "Server working"
 
 
-@app.route("/fixdb")
+@app.route("/fixclicks")
 def fix_db():
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("ALTER TABLE urls ADD COLUMN risk_level TEXT;")
+        cursor.execute("ALTER TABLE urls RENAME COLUMN cclicks TO clicks;")
     except:
-        pass
+        return "str(e)"
     try:
         cursor.execute("ALTER TABLE urls ADD COLUMN score INTEGER;")
     except:
