@@ -138,6 +138,7 @@ def redirect_url(code):
     result = cursor.fetchone()
     if not result:
         return "<h2> Link Not Found</h2>", 404
+    original_url = result[0]
     cursor.execute(
         """
         UPDATE urls 
@@ -148,7 +149,7 @@ def redirect_url(code):
         (code,),
     )
     db.commit()
-    return redirect(result["original_url"])
+    return redirect(original_url)
 
 
 @app.route("/dashboard")
@@ -218,7 +219,7 @@ def shorten():
     code = custom if custom else generate_code()
     cursor.execute("SELECT id FROM urls WHERE short_code=%s", (code,))
     if cursor.fetchone():
-        return jsonify({"error": "Custom alias exists"})
+        code = generate_code()
     cursor.execute(
         """
         INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id, risk_level, score, reasons) 

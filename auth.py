@@ -13,19 +13,36 @@ def register():
     password = data.get("password")
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
-
-    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     db = get_db()
     cursor = db.cursor()
-    try:
-        cursor.execute(
-            "INSERT INTO users(username,password)VALUES(%s,%s)",
-            (username, hashed.decode("utf-8")),
-        )
-        db.commit()
-        return jsonify({"message": "User registered successfully"})
-    except:
-        return jsonify({"error": "User already exists"}), 400
+    cursor.execute(
+        "SELECT id, password FROM users WHERE username=%s",
+        (username,),
+    )
+    existing_user = cursor.fetchone()
+    if existing_user:
+        stored_password = existing_user[1]
+        if isinstance(stored_password, str):
+            stored_password = stored_password.encode("utf-8")
+        if bcrypt.checkpw(password.encode("utf-8"), stored_password):
+            token = create_access_token(identity=str(existing_user[0]))
+            return jsonify(
+                {"message": "User already exists, logged in", "token": token}
+            )
+        return jsonify({"error": "Username already exists"}), 400
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    cursor.execute(
+        "INSERT INTO users(username,password) VALUES(%s,%s)",
+        (username, hashed.decode("utf-8")),
+    )
+    db.commit()
+    cursor.execute(
+        "SELECT id FROM users WHERE username=%s",
+        (username,),
+    )
+    user = cursor.fetchone()
+    token = create_access_token(identity=str(user[0]))
+    return jsonify({"message": "User registered successfully", "token": token})
 
 
 @auth.route("/login", methods=["POST"])
