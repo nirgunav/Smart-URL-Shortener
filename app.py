@@ -13,6 +13,31 @@ BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 app = Flask(__name__)
 
 
+@app.route("/test")
+def test():
+    return "Server working"
+
+
+@app.route("/fixdb")
+def fix_db():
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("ALTER TABLE urls ADD COLUMN risk_level TEXT;")
+    except:
+        pass
+    try:
+        cursor.execute("ALTER TABLE urls ADD COLUMN score INTEGER;")
+    except:
+        pass
+    try:
+        cursor.execute("ALTER TABLE urls ADD COLUMN reasons TEXT;")
+    except:
+        pass
+    db.commit()
+    return "DB Updated Successfully!"
+
+
 def create_tables():
     db = get_db()
     cursor = db.cursor()
@@ -36,7 +61,10 @@ def create_tables():
                    one_time INTEGER,
                    clicks INTEGER DEFAULT 0,
                    last_opened TIMESTAMP,
-                   user_id INTEGER
+                   user_id INTEGER,
+                   risk_level TEXT,
+                   Score INTEGER,
+                   reasons TEXT
                    );
                    """
     )
@@ -193,10 +221,20 @@ def shorten():
         return jsonify({"error": "Custom alias exists"})
     cursor.execute(
         """
-        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id) 
-        VALUES (%s,%s,%s,%s,%s,%s)
+        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id. risk_level, score, reasons) 
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """,
-        (url, code, expiry, password, one_time, user_id),
+        (
+            url,
+            code,
+            expiry,
+            password,
+            one_time,
+            user_id,
+            risk_level,
+            score,
+            ",".join(reasons),
+        ),
     )
     db.commit()
     short_url = f"{BASE_URL}/{code}"

@@ -209,7 +209,7 @@
                     })
                     .then(data => {
                         console.log(data);
-                        if (data.short_url) {
+                        if (!data.short_url) {
                             document.getElementById("result").innerHTML = "Server Error";
                             return;
                         }
@@ -220,7 +220,7 @@
 
                         document.getElementById("result").innerHTML = `
            <div class="circle" style="background: ${color};color:white">
-              ${data.score ?? 0}/10
+              ${data.score ? data.score : 0}/10
            </div>
            <div class="risk" style="color:${color}">
                ${data.risk_level || "Unknown"}
