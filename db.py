@@ -6,9 +6,9 @@ DATABASE_URL = "postgresql://url_db_2yjn_user:0yiwgAX9ebtpf9bXY9XlCGElKoKQbwIy@d
 
 
 def get_db():
-    db_url = os.getenv("url-db")
+    db_url = os.getenv("DATABASE_URL")
 
-    if db_url:
-        return psycopg2.connect(
-            os.getenv("DATABASE_URL"), cursor_factory=RealDictCursor
-        )
+    if not db_url:
+        raise Exception("DATABASE_URL not found")
+
+    return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
