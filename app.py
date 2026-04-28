@@ -63,7 +63,7 @@ def create_tables():
                    last_opened TIMESTAMP,
                    user_id INTEGER,
                    risk_level TEXT,
-                   Score INTEGER,
+                   score INTEGER,
                    reasons TEXT
                    );
                    """
@@ -157,7 +157,7 @@ def dashboard():
     user_id = get_jwt_identity()
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT *FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
+    cursor.execute("SELECT * FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
     total = cursor.fetchone()["total"]
@@ -221,7 +221,7 @@ def shorten():
         return jsonify({"error": "Custom alias exists"})
     cursor.execute(
         """
-        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id. risk_level, score, reasons) 
+        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id, risk_level, score, reasons) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """,
         (
@@ -263,11 +263,6 @@ def shorten():
             "last_opened": "Not opened yet",
         }
     )
-
-
-@app.route("/test")
-def test():
-    return "Server working"
 
 
 if __name__ == "__main__":
