@@ -31,7 +31,7 @@ def register():
 @auth.route("/login", methods=["POST"])
 def login():
     try:
-        data = request.get_json
+        data = request.get_json()
         if not data:
             return jsonify({"error": "No data received"}), 400
         username = data.get("username")
@@ -47,14 +47,13 @@ def login():
         user = cursor.fetchone()
         if not user:
             return jsonify({"error": "Invalid username"}), 401
-        user_id = user_id[0]
         stored_password = user[2]
         if isinstance(stored_password, str):
             stored_password = stored_password.encode("utf-8")
         if not bcrypt.checkpw(password.encode("utf-8"), stored_password):
             return jsonify({"error": "Invalid password"}), 401
-        token = create_access_token(identity=user["id"])
+        token = create_access_token(identity=str(user[0]))
         return jsonify({"token": token})
     except Exception as e:
         print("LOGIN ERROR:", repr(e))
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"error": str(e)}), 500
