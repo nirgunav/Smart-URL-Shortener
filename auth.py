@@ -47,7 +47,8 @@ def login():
         user = cursor.fetchone()
         if not user:
             return jsonify({"error": "Invalid username"}), 401
-        stored_password = user["password"]
+        user_id = user_id[0]
+        stored_password = user[2]
         if isinstance(stored_password, str):
             stored_password = stored_password.encode("utf-8")
         if not bcrypt.checkpw(password.encode("utf-8"), stored_password):
