@@ -18,23 +18,6 @@ def test():
     return "Server working"
 
 
-@app.route("/fixclicks")
-def fix_db():
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute(
-            """
-                       ALTER TABLE urls RENAME COLUMN cclicks TO clicks;" \
-        """
-        )
-        db.commit()
-        return "DB Updated Successfully!"
-    except Exception as e:
-        db.commit()
-        return f"ERROR: {str(e)}"
-
-
 def create_tables():
     db = get_db()
     cursor = db.cursor()
@@ -56,7 +39,7 @@ def create_tables():
                    expiry TIMESTAMP,
                    password TEXT,
                    one_time INTEGER,
-                   clicks INTEGER DEFAULT 0,
+                   cclicks INTEGER DEFAULT 0,
                    last_opened TIMESTAMP,
                    user_id INTEGER,
                    risk_level TEXT,
@@ -128,7 +111,7 @@ def redirect_url(code):
         cursor = db.cursor()
         cursor.execute(
             """
-            SELECT original_url, expiry, password, one_time, clicks
+            SELECT original_url, expiry, password, one_time, cclicks
             FROM urls
             WHERE short_code=%s
             """,
@@ -145,7 +128,7 @@ def redirect_url(code):
         cursor.execute(
             """
             UPDATE urls 
-            SET clicks = clicks + 1,
+            SET cclicks = cclicks + 1,
                 last_opened = NOW()
             WHERE short_code=%s
             """,
@@ -169,7 +152,7 @@ def dashboard():
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
     total = cursor.fetchone()[0]
-    cursor.execute("SELECT SUM(clicks) AS clicks FROM urls")
+    cursor.execute("SELECT SUM(cclicks) AS clicks FROM urls")
     clicks = cursor.fetchone()[0]
     return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 
