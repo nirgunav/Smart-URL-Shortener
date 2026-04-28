@@ -125,31 +125,41 @@ def index():
 
 @app.route("/<code>")
 def redirect_url(code):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        """
-        SELECT original_url, expiry, password, one_time, clicks
-        FROM urls
-        WHERE short_code=%s
-    """,
-        (code,),
-    )
-    result = cursor.fetchone()
-    if not result:
-        return "<h2> Link Not Found</h2>", 404
-    original_url = result[0]
-    cursor.execute(
-        """
-        UPDATE urls 
-        SET clicks = clicks + 1,
-            last_opened = NOW()
-        WHERE short_code=%s
-    """,
-        (code,),
-    )
-    db.commit()
-    return redirect(original_url)
+    try:
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            """
+            SELECT original_url, expiry, password, one_time, clicks
+            FROM urls
+            WHERE short_code=%s
+            """,
+            (code,),
+        )
+        result = cursor.fetchone()
+        if not result:
+            return "<h2> Link Not Found</h2>", 404
+        original_url = result[0]
+        if not original_url.startswith("http://") and not original_url.startswith(
+            "https://"
+        ):
+            original_url = "https://" + original_url
+        cursor.execute(
+            """
+            UPDATE urls 
+            SET clicks = clicks + 1,
+                last_opened = NOW()
+            WHERE short_code=%s
+            """,
+            (code,),
+        )
+        db.commit()
+        print("REDIRECTING TO:", original_url)
+        return redirect(original_url)
+    except Exception as e:
+        print("REDIRECT ERROR:", repr(e))
+        return f"<h2>Server Error: {str(e)}</h2>", 500
 
 
 @app.route("/dashboard")
