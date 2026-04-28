@@ -292,18 +292,11 @@
                 alert("Copied!");
             }
             window.onload = function () {
-                let token = localStorage.getItem("token");
-                if (token) {
-                    document.getElementById("signupBox").style.display = "none";
-                    document.getElementById("loginSection").style.display = "none";
-                    document.getElementById("shortenSection").style.display = "block";
+                localStorage.removeItem("token");
+                document.getElementById("signupBox").style.display = "block";
+                document.getElementById("loginSection").style.display = "block";
+                document.getElementById("shortenSection").style.display = "none";
 
-
-                } else {
-                    document.getElementById("signupBox").style.display = "block";
-                    document.getElementById("loginSection").style.display = "block";
-                    document.getElementById("shortenSection").style.display = "none";
-                }
             }
         </script>
 </body>
