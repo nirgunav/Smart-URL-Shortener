@@ -23,19 +23,16 @@ def fix_db():
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("ALTER TABLE urls RENAME COLUMN cclicks TO clicks;")
-    except:
-        return "str(e)"
-    try:
-        cursor.execute("ALTER TABLE urls ADD COLUMN score INTEGER;")
-    except:
-        pass
-    try:
-        cursor.execute("ALTER TABLE urls ADD COLUMN reasons TEXT;")
-    except:
-        pass
-    db.commit()
-    return "DB Updated Successfully!"
+        cursor.execute(
+            """
+                       ALTER TABLE urls RENAME COLUMN cclicks TO clicks;" \
+        """
+        )
+        db.commit()
+        return "DB Updated Successfully!"
+    except Exception as e:
+        db.commit()
+        return f"ERROR: {str(e)}"
 
 
 def create_tables():
