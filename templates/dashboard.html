@@ -13,94 +13,57 @@
         }
 
         .nav {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 30px;
-            background: #0f172a;
-            border-bottom: 1px solid #1f2937;
-        }
-
-        .nav h2 {
-            color: #38bdf8;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .card {
-            background: #111827;
             padding: 15px;
-            border-radius: 10px;
-            flex: 1;
+            background: #0f172a;
+            color: #38bdf8;
         }
 
         table {
             width: 95%;
-            margin: auto;
+            margin: 20px auto;
             border-collapse: collapse;
-            background: #111827;
-            border-radius: 10px;
-            overflow: hidden;
         }
 
         th,
         td {
             padding: 12px;
             border-bottom: 1px solid #1f2937;
-            text-align: center;
         }
 
         th {
-            background: #0f172a;
+            background: #111827;
             color: #38bdf8;
         }
 
         tr:hover {
-            background: #1f2937;
+            background: #111827;
         }
 
         button {
-            background: #ef4444;
-            color: white;
-            border: none;
             padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
+            background: red;
+            border: none;
+            color: white;
+            border-radius: 5px;
         }
     </style>
+
 </head>
 
 <body>
 
     <div class="nav">
-        <h2>Analytics Dashboard</h2>
-        <a href="/" style="color:#38bdf8;">Home</a>
+        Smart Dashboard
     </div>
 
-    <div class="stats">
-        <div class="card">
-            <h3>Total Links</h3>
-            <p>{{total}}</p>
-        </div>
-
-        <div class="card">
-            <h3>Total Clicks</h3>
-            <p>{{clicks}}</p>
-        </div>
-    </div>
-
-    <h3 style="text-align:center;">All Links</h3>
+    <h3 style="margin:20px;">Stats: {{total}} Links | {{clicks}} Clicks</h3>
 
     <table>
         <tr>
-            <th>Short Code</th>
+            <th>Short</th>
             <th>URL</th>
             <th>Clicks</th>
             <th>Risk</th>
-            <th>Last Opened</th>
             <th>Delete</th>
         </tr>
 
@@ -110,7 +73,6 @@
             <td>{{link.original_url}}</td>
             <td>{{link.cclicks}}</td>
             <td>{{link.risk_level}}</td>
-            <td>{{link.last_opened}}</td>
             <td>
                 <button onclick="del('{{link.id}}')">Delete</button>
             </td>

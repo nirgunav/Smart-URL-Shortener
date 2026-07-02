@@ -3,7 +3,6 @@
 
 <head>
     <title>Smart URL Shortener</title>
-
     <style>
         body {
             margin: 0;
@@ -21,22 +20,25 @@
         }
 
         .nav h2 {
-            margin: 0;
             color: #38bdf8;
         }
 
         .container {
             display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 20px;
-            padding: 30px;
+            grid-template-columns: 1fr 1fr;
+            height: 90vh;
+        }
+
+        .left,
+        .right {
+            padding: 40px;
         }
 
         .card {
             background: #111827;
-            padding: 20px;
+            padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 20px;
         }
 
         input {
@@ -50,46 +52,30 @@
         }
 
         button {
-            padding: 10px;
-            border-radius: 8px;
+            width: 100%;
+            padding: 12px;
             border: none;
             background: #3b82f6;
             color: white;
+            border-radius: 8px;
             cursor: pointer;
-            width: 100%;
         }
 
         button:hover {
             background: #2563eb;
         }
 
+        #shortenSection {
+            display: none;
+        }
+
         #result {
-            margin-top: 20px;
-            padding: 15px;
-            background: #0b1220;
-            border-radius: 10px;
-            border: 1px solid #1f2937;
-        }
-
-        .circle {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            margin: 10px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .small {
-            font-size: 12px;
-            color: #94a3b8;
-            text-align: center;
+            margin-top: 15px;
         }
 
         a {
             color: #38bdf8;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -98,81 +84,117 @@
 
     <div class="nav">
         <h2>Smart URL Shortener</h2>
-        <a href="/dashboard" style="color:#38bdf8;">Dashboard</a>
+        <div>Secure • QR • Analytics</div>
     </div>
 
     <div class="container">
 
-        <!-- LEFT -->
-        <div class="card">
+        <!-- LEFT: AUTH -->
+        <div class="left">
 
-            <h3>Shorten URL</h3>
+            <div class="card">
+                <h3>Signup</h3>
+                <input id="su_username" placeholder="Username">
+                <input id="su_password" type="password" placeholder="Password">
+                <button onclick="signup()">Create Account</button>
+            </div>
 
-            <input id="url" placeholder="Enter URL">
-            <input id="custom" placeholder="Custom alias">
-            <input type="date" id="expiry">
-
-            <label>
-                <input type="checkbox" id="one_time">
-                One time link
-            </label>
-
-            <button onclick="shorten()">Generate</button>
-
-            <div id="result"></div>
+            <div class="card">
+                <h3>Login</h3>
+                <input id="username" placeholder="Username">
+                <input id="loginPassword" type="password" placeholder="Password">
+                <button onclick="login()">Login</button>
+            </div>
 
         </div>
 
-        <!-- RIGHT -->
-        <div class="card">
-            <h3>Features</h3>
-            <p>✔ Secure Links</p>
-            <p>✔ QR Code Generator</p>
-            <p>✔ AI Risk Detection</p>
-            <p>✔ Click Tracking</p>
+        <!-- RIGHT: APP -->
+        <div class="right">
+
+            <div class="card" id="shortenSection">
+                <h3>Shorten URL</h3>
+
+                <input id="url" placeholder="Enter URL">
+                <input id="custom" placeholder="Custom alias">
+                <input type="date" id="expiry">
+                <label><input type="checkbox" id="one_time"> One time link</label>
+
+                <button onclick="shorten()">Generate</button>
+
+                <div id="result"></div>
+            </div>
+
         </div>
 
     </div>
 
     <script>
+        function signup() {
+            fetch("/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: su_username.value,
+                    password: su_password.value
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem("token", data.token);
+                        alert("Signup success");
+                    } else {
+                        alert(data.error);
+                    }
+                });
+        }
+
+        function login() {
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: username.value,
+                    password: loginPassword.value
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem("token", data.token);
+                        alert("Login success");
+                    } else {
+                        alert("Login failed");
+                    }
+                });
+        }
+
         function shorten() {
-
-            let token = localStorage.getItem("token");
-            if (!token) return alert("Login required");
-
             fetch("/api/shorten", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
+                    "Authorization": "Bearer " + localStorage.getItem("token")
                 },
                 body: JSON.stringify({
-                    url: document.getElementById("url").value,
-                    custom: document.getElementById("custom").value,
-                    expiry: document.getElementById("expiry").value,
-                    one_time: document.getElementById("one_time").checked
+                    url: url.value,
+                    custom: custom.value,
+                    expiry: expiry.value,
+                    one_time: one_time.checked
                 })
             })
                 .then(r => r.json())
                 .then(data => {
 
                     if (!data.short_url) {
-                        document.getElementById("result").innerHTML = data.error;
+                        result.innerHTML = data.error;
                         return;
                     }
 
-                    let color =
-                        data.risk_level === "Safe" ? "#38bdf8" :
-                            data.risk_level === "Suspicious" ? "#f59e0b" :
-                                "#ef4444";
-
-                    document.getElementById("result").innerHTML = `
-            <div class="circle" style="background:${color}">
-                ${data.score}/10
-            </div>
-
-            <p class="small">${data.short_url}</p>
-
+                    result.innerHTML = `
+            <p><b>Short URL:</b></p>
+            <a href="${data.short_url}" target="_blank">${data.short_url}</a>
+            <br><br>
             <img src="${data.qr}" width="120">
         `;
                 });
