@@ -7,6 +7,8 @@ from PIL import Image
 import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token
 
 BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
@@ -56,7 +58,7 @@ create_tables()
 
 
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-jwt = JWTManager(app)
+
 app.register_blueprint(auth)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

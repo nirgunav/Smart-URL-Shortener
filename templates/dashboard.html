@@ -13,14 +13,21 @@
         }
 
         .nav {
-            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
             background: #0f172a;
-            color: #38bdf8;
+        }
+
+        .box {
+            padding: 20px;
+            margin: 20px;
+            background: #111827;
+            border-radius: 12px;
         }
 
         table {
-            width: 95%;
-            margin: 20px auto;
+            width: 100%;
             border-collapse: collapse;
         }
 
@@ -31,20 +38,16 @@
         }
 
         th {
-            background: #111827;
             color: #38bdf8;
         }
 
-        tr:hover {
-            background: #111827;
-        }
-
         button {
-            padding: 6px 10px;
-            background: red;
+            background: #ef4444;
             border: none;
+            padding: 6px 10px;
             color: white;
-            border-radius: 5px;
+            border-radius: 6px;
+            cursor: pointer;
         }
     </style>
 
@@ -53,32 +56,36 @@
 <body>
 
     <div class="nav">
-        Smart Dashboard
+        <h2>Dashboard</h2>
+        <a href="/" style="color:#38bdf8;">Logout</a>
     </div>
 
-    <h3 style="margin:20px;">Stats: {{total}} Links | {{clicks}} Clicks</h3>
+    <div class="box">
+        <h3>Your Links</h3>
 
-    <table>
-        <tr>
-            <th>Short</th>
-            <th>URL</th>
-            <th>Clicks</th>
-            <th>Risk</th>
-            <th>Delete</th>
-        </tr>
+        <table>
+            <tr>
+                <th>Code</th>
+                <th>URL</th>
+                <th>Clicks</th>
+                <th>Risk</th>
+                <th>Action</th>
+            </tr>
 
-        {% for link in links %}
-        <tr>
-            <td>{{link.short_code}}</td>
-            <td>{{link.original_url}}</td>
-            <td>{{link.cclicks}}</td>
-            <td>{{link.risk_level}}</td>
-            <td>
-                <button onclick="del('{{link.id}}')">Delete</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for link in links %}
+            <tr>
+                <td>{{link.short_code}}</td>
+                <td>{{link.original_url}}</td>
+                <td>{{link.cclicks}}</td>
+                <td>{{link.risk_level}}</td>
+                <td>
+                    <button onclick="del('{{link.id}}')">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+
+        </table>
+    </div>
 
     <script>
         function del(id) {
