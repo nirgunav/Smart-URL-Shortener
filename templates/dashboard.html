@@ -1,64 +1,134 @@
-<DOCTYPE html>
-    <html>
+<!DOCTYPE html>
+<html>
 
-    <head>
-        <title>Dashboard</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
+<head>
+    <title>Dashboard</title>
 
-    <body>
-        <div style="margin:20px;">
-            <h2>Dashboard Stats</h2>
-            <p>Total Links: {{total}}</p>
-            <p>Total Clicks: {{clicks}}</p>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0b1220;
+            color: white;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: #0f172a;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .nav h2 {
+            color: #38bdf8;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background: #111827;
+            padding: 15px;
+            border-radius: 10px;
+            flex: 1;
+        }
+
+        table {
+            width: 95%;
+            margin: auto;
+            border-collapse: collapse;
+            background: #111827;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #1f2937;
+            text-align: center;
+        }
+
+        th {
+            background: #0f172a;
+            color: #38bdf8;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="nav">
+        <h2>Analytics Dashboard</h2>
+        <a href="/" style="color:#38bdf8;">Home</a>
+    </div>
+
+    <div class="stats">
+        <div class="card">
+            <h3>Total Links</h3>
+            <p>{{total}}</p>
         </div>
-        <h2>All Links</h2>
-        <table border="1" style="margin:auto;width:80%;">
-            <tr>
-                <th>Short Code</th>
-                <th>Original URL</th>
-                <th>Clicks</th>
-                <th>Risk</th>
-                <th>Expiry</th>
-                <th>Last Opened</th>
-                <th>Risk Score</th>
-                <th>Reasons</th>
-                <th>Browser</th>
-                <th>Visitor IP</th>
-                <th>Delete</th>
-            </tr>
 
-            {% for link in links %}
-            <tr>
-                <td>{{link.short_code}}</td>
-                <td>{{link.original_url}}</td>
-                <td>{{link.cclicks}}</td>
-                <td>{{link.risk_level}}</td>
-                <td>{{link.expiry}}</td>
-                <td>{{link.last_opened}}</td>
-                <td>{{link.score}}</td>
-                <td>{{link.reasons}}</td>
-                <td>{{link.browser}}</td>
-                <td>{{link.visitor_ip}}</td>
-                <td>
-                    <button onclick="deleteLink('{{link.id}}')">Delete</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-        <script>
-            function deleteLink(id) {
+        <div class="card">
+            <h3>Total Clicks</h3>
+            <p>{{clicks}}</p>
+        </div>
+    </div>
 
-                fetch("/api/delete/" + id, {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: "Bearer " + localStorage.getItem("token")
-                    }
-                })
-                    .then(() => location.reload());
+    <h3 style="text-align:center;">All Links</h3>
 
-            }
-        </script>
-    </body>
+    <table>
+        <tr>
+            <th>Short Code</th>
+            <th>URL</th>
+            <th>Clicks</th>
+            <th>Risk</th>
+            <th>Last Opened</th>
+            <th>Delete</th>
+        </tr>
 
-    </html>
+        {% for link in links %}
+        <tr>
+            <td>{{link.short_code}}</td>
+            <td>{{link.original_url}}</td>
+            <td>{{link.cclicks}}</td>
+            <td>{{link.risk_level}}</td>
+            <td>{{link.last_opened}}</td>
+            <td>
+                <button onclick="del('{{link.id}}')">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        function del(id) {
+            fetch("/api/delete/" + id, {
+                method: "DELETE",
+                headers: {
+                    Authorization: "Bearer " + localStorage.getItem("token")
+                }
+            }).then(() => location.reload());
+        }
+    </script>
+
+</body>
+
+</html>

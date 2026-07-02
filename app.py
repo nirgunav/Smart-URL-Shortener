@@ -8,9 +8,9 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
-BASE_URL = os.getenv("BASE_URL")
+BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 
 @app.route("/test")
@@ -250,7 +250,7 @@ def shorten():
     qr.add_data(short_url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    logo_path = os.path.join(BASE_DIR, "static", "logo.png")
+    logo_path = os.path.join(BASE_DIR, "static", "qr", "logo.png")
     if os.path.exists(logo_path):
         logo = Image.open(logo_path).convert("RGBA")
         qr_w, qr_h = img.size
@@ -263,7 +263,7 @@ def shorten():
     return jsonify(
         {
             "short_url": f"{BASE_URL}/{code}",
-            "qr": f"/static/qr/{code}.png",
+            "qr": f"{BASE_URL}/static/qr/{code}.png",
             "risk_level": risk_level,
             "score": score,
             "reasons": reasons,

@@ -2,307 +2,183 @@
 <html>
 
 <head>
-    <title> URL Shortener</title>
+    <title>Smart URL Shortener</title>
+
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             margin: 0;
-            text-align: center;
             font-family: Arial;
+            background: #0b1220;
             color: white;
-            background: linear-gradient(135deg, #0f172a, #1e293b, #020617);
         }
 
-        .box {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: #0f172a;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .nav h2 {
+            margin: 0;
+            color: #38bdf8;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
             padding: 30px;
-            width: 420px;
+        }
+
+        .card {
+            background: #111827;
+            padding: 20px;
             border-radius: 12px;
-            margin: 20px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
         }
 
         input {
-            width: 90%;
-            padding: 10px;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-        }
-
-        h2 {
-            margin-bottom: 20px;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            background: #0b1220;
+            color: white;
         }
 
         button {
             padding: 10px;
+            border-radius: 8px;
+            border: none;
             background: #3b82f6;
             color: white;
-            border: none;
             cursor: pointer;
-            border-radius: 5px;
+            width: 100%;
         }
 
         button:hover {
             background: #2563eb;
         }
 
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0b1220;
+            border-radius: 10px;
+            border: 1px solid #1f2937;
+        }
+
         .circle {
-            width: 100px;
-            height: 100px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
-            margin: 15px auto;
+            margin: 10px auto;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: white;
-            font-size: 20px;
-            border: 4px solid white;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-
-        #result {
-            margin-top: 20px;
-        }
-
-        .score {
-            font-size: 32px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        a {
-            color: #38bdf8;
-            word-break: break-all;
         }
 
         .small {
             font-size: 12px;
-            color: #94a3b8
+            color: #94a3b8;
+            text-align: center;
         }
 
-        .risk {
-            font-size: 22px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .trust {
-            font-size: 16px;
+        a {
             color: #38bdf8;
-            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
-    <div class="box">
-        <h2>SMART URL SHORTENER</h2>
-        <div id="signupBox">
-            <h3>Sign Up</h3>
-            <input id="su_username" placeholder="New Username">
-            <input id="su_password" type="password" placeholder="New Password">
-            <br><br>
-            <button onClick="signup()">Create Account</button>
-        </div>
-        <hr>
-        <div id="loginSection">
-            <h3>Login</h3>
-            <input id="username" placeholder="Username">
-            <input id="loginPassword" type="password" placeholder=" Password">
-            <br><br>
-            <button onClick="login()">Login</button>
-            <br><br>
-        </div>
 
-        <div id="shortenSection" style="display:none;">
-            <input id="url" placeholder="Enter URL to shorten">
+    <div class="nav">
+        <h2>Smart URL Shortener</h2>
+        <a href="/dashboard" style="color:#38bdf8;">Dashboard</a>
+    </div>
+
+    <div class="container">
+
+        <!-- LEFT -->
+        <div class="card">
+
+            <h3>Shorten URL</h3>
+
+            <input id="url" placeholder="Enter URL">
             <input id="custom" placeholder="Custom alias">
-            <input id="password" placeholder="Password">
             <input type="date" id="expiry">
-            <input type="checkbox" id="one_time">
-            <label for="one_time">One Time Link</label>
-            <br><br>
 
-            <br><br>
-            <button onClick="shorten()">Shorten</button>
+            <label>
+                <input type="checkbox" id="one_time">
+                One time link
+            </label>
+
+            <button onclick="shorten()">Generate</button>
+
             <div id="result"></div>
+
         </div>
-        <script>
-            function signup() {
-                let username = document.getElementById("su_username").value;
-                let password = document.getElementById("su_password").value;
-                fetch("/register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
 
+        <!-- RIGHT -->
+        <div class="card">
+            <h3>Features</h3>
+            <p>✔ Secure Links</p>
+            <p>✔ QR Code Generator</p>
+            <p>✔ AI Risk Detection</p>
+            <p>✔ Click Tracking</p>
+        </div>
+
+    </div>
+
+    <script>
+        function shorten() {
+
+            let token = localStorage.getItem("token");
+            if (!token) return alert("Login required");
+
+            fetch("/api/shorten", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({
+                    url: document.getElementById("url").value,
+                    custom: document.getElementById("custom").value,
+                    expiry: document.getElementById("expiry").value,
+                    one_time: document.getElementById("one_time").checked
                 })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.token) {
-                            localStorage.setItem("token", data.token);
-                            document.getElementById("signupBox").style.display = "none";
-                            document.getElementById("loginSection").style.display = "none";
-                            document.getElementById("shortenSection").style.display = "block";
-                            alert(data.message);
-                        } else {
-                            alert(data.error || "Signup failed");
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        alert("Signup failed");
-                    });
-            }
-            function login() {
-                fetch("/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        username: document.getElementById("username").value,
-                        password: document.getElementById("loginPassword").value
-                    })
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.token) {
-                            localStorage.setItem("token", data.token);
-                            document.getElementById("signupBox").style.display = "none";
-                            document.getElementById("loginSection").style.display = "none";
-                            document.getElementById("shortenSection").style.display = "block";
-                            alert(data.message || "Login successful!");
-                        } else {
-                            alert(data.error || "Login failed");
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        alert("Server error during login");
-                    });
-            }
-            function shorten() {
-                let token = localStorage.getItem("token");
-                if (!token) {
-                    alert("Please login first");
-                    return;
-                }
-                let inputUrl = document.getElementById("url").value;
-                let domain = "";
-                try {
-                    domain = new URL(inputUrl).hostname;
-                } catch {
-                    domain = "invalid-url";
-                }
-                fetch("/api/shorten", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": "Bearer " + token
-                    },
-                    body: JSON.stringify({
-                        url: document.getElementById("url").value,
-                        custom: document.getElementById("custom").value,
-                        expiry: document.getElementById("expiry").value,
-                        one_time: document.getElementById("one_time").checked
-                    })
-                })
-                    .then(res => {
-                        if (!res.ok) {
-                            throw new Error("API failed: " + res.status);
-                        }
-                        return res.json();
-                    })
-                    .then(data => {
-                        console.log(data);
-                        if (!data.short_url) {
-                            document.getElementById("result").innerHTML = data.error || "Server Error";
-                            return;
-                        }
-                        let color =
-                            data.risk_level === "Safe" ? "#38bdf8" :
-                                data.risk_level == "Suspicious" ? "#f59e0b" :
-                                    "#ef4444";
+            })
+                .then(r => r.json())
+                .then(data => {
 
-                        document.getElementById("result").innerHTML = `
-           <div class="circle" style="background: ${color};color:white">
-              ${data.score ? data.score : 0}/10
-           </div>
-           <div class="risk" style="color:${color}">
-               ${data.risk_level || "Unknown"}
-           </div>
+                    if (!data.short_url) {
+                        document.getElementById("result").innerHTML = data.error;
+                        return;
+                    }
 
-           <div class="trust">
-              Trust Score: ${data.score ? 100 - data.score * 10 : 0}% 
-           </div>
+                    let color =
+                        data.risk_level === "Safe" ? "#38bdf8" :
+                            data.risk_level === "Suspicious" ? "#f59e0b" :
+                                "#ef4444";
 
-           <div class="small">
-              Domain:${domain}
-           </div>
-           <br>
-           <a href="${data.short_url}" target="_blank">${data.short_url}</a>
-           <br><br>
-          <input value="${data.short_url}" readonly>
-          <button onclick="copy()">Copy</button>
-          <br><br>
-          <!--QR-->
-          <img src="${window.location.origin + data.qr}" width="120">
-          <br><br>
-          <div class="small">Scan QR</div>
-          <br>
-          <a href="${data.qr}"download>
-            <button>Download QR</button>
-          </a>
-          <br><br>
-          <div class="small">
-            Last Opened: ${data.last_opened}
-          </div>
-          <br>
-          <button onclick="window.open('${data.short_url}','_blank')">
-            Open Link
-          </button>
-          <br><br>
-          <a href="/dashboard">
-            <button style="margin-bottom:15px;">Go to Dashboard</button>
-          </a>
-          <br><br>
-           <div style="font-size:14px; margin-top:10px;">
-               ${data.reasons && data.reasons.length > 0
-                                ? data.reasons.join("<br>")
-                                : "No issues detected"}
-           </div>
-           <br>
-          
+                    document.getElementById("result").innerHTML = `
+            <div class="circle" style="background:${color}">
+                ${data.score}/10
+            </div>
+
+            <p class="small">${data.short_url}</p>
+
+            <img src="${data.qr}" width="120">
         `;
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                        document.getElementById("result").innerHTML = "Error Ocurred";
-                    });
-            }
-            function copy() {
-                let input = document.querySelector("#result input");
-                if (input) {
-                    input.select();
-                    document.execCommand("copy");
-                }
-                alert("Copied!");
-            }
-            window.onload = function () {
-                localStorage.removeItem("token");
-                document.getElementById("signupBox").style.display = "block";
-                document.getElementById("loginSection").style.display = "block";
-                document.getElementById("shortenSection").style.display = "none";
+                });
+        }
+    </script>
 
-            }
-        </script>
 </body>
 
 </html>
