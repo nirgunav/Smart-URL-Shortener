@@ -85,7 +85,7 @@ def test():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", links=links, total=total, clicks=clicks)
+    return render_template("dashboard.html")
 
 
 def ai_risk(url):
