@@ -13,6 +13,9 @@ from flask_jwt_extended import create_access_token
 BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "my-secret-key")
+
+jwt = JWTManager(app)
 
 
 @app.route("/test")
@@ -164,7 +167,6 @@ def redirect_url(code):
 
 
 @app.route("/dashboard")
-@jwt_required()
 def dashboard():
     user_id = get_jwt_identity()
     db = get_db()
