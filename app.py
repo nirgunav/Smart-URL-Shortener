@@ -121,29 +121,12 @@ def redirect_url(code):
             return "<h2> Link Not Found</h2>", 404
         original_url = result[0]
         expiry = result[1]
-        password = result[2]
         one_time = result[3]
         clicks = result[4]
         ip = request.remote_addr
         browser = request.headers.get("User-Agent")
         if expiry and datetime.now() > expiry:
             return "<h2>This link has expired.</h2>", 403
-        if password:
-            entered = request.args.get("password")
-
-            if entered != password:
-                return """
-              <h2>Password Protected Link</h2>
-
-              <form>
-                  <input type='password'
-                   name='password'
-                   placeholder='Enter Password'>
-                   <button type='submit'>
-                Open Link
-               </button>
-               </form>
-                """
         if one_time and clicks >= 1:
             return "<h2>This one-time link has already been used.</h2>", 403
         if not original_url.startswith("http://") and not original_url.startswith(
@@ -229,7 +212,6 @@ def shorten():
             }
         )
     custom = data.get("custom")
-    password = data.get("password") or None
     expiry = data.get("expiry")
     one_time = 1 if data.get("one_time") else 0
     if expiry and expiry.strip():
@@ -246,14 +228,13 @@ def shorten():
         code = generate_code()
     cursor.execute(
         """
-        INSERT INTO urls (original_url, short_code, expiry, password, one_time,user_id, risk_level, score, reasons) 
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        INSERT INTO urls (original_url, short_code, expiry, one_time,user_id, risk_level, score, reasons) 
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
     """,
         (
             url,
             code,
             expiry,
-            password,
             one_time,
             user_id,
             risk_level,
