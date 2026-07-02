@@ -1,193 +1,45 @@
-<!DOCTYPE html>
-<html>
+<DOCTYPE html>
+    <html>
 
-<head>
-    <title>SmartLink Dashboard</title>
+    <head>
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            background: #0b1220;
-            color: white;
-        }
-
-        /* TOP NAV */
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 40px;
-            background: #0f172a;
-            border-bottom: 1px solid #1f2937;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #38bdf8;
-            letter-spacing: 2px;
-        }
-
-        .nav a {
-            color: #38bdf8;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        /* WRAPPER */
-        .wrapper {
-            padding: 30px;
-        }
-
-        /* STATS */
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            flex: 1;
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .card h3 {
-            margin: 0;
-            color: #38bdf8;
-        }
-
-        /* TABLE */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #111827;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        th,
-        td {
-            padding: 14px;
-            border-bottom: 1px solid #1f2937;
-            text-align: left;
-        }
-
-        th {
-            background: #0f172a;
-            color: #38bdf8;
-        }
-
-        tr:hover {
-            background: #1f2937;
-        }
-
-        /* BUTTON */
-        button {
-            background: #ef4444;
-            border: none;
-            padding: 6px 10px;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #dc2626;
-        }
-
-        .small {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="nav">
-        <div class="logo">SMARTLINK</div>
-        <div>
-            <a href="#" onclick="logout()">Logout</a>
+    <body>
+        <div style="margin:20px;">
+            <h2>Dashboard Stats</h2>
+            <p>Total Links: {{total}}</p>
+            <p>Total Clicks: {{clicks}}</p>
         </div>
-    </div>
+        <h2>All Links</h2>
+        <table border="1" style="margin:auto;width:80%;">
+            <tr>
+                <th>Short Code</th>
+                <th>Original URL</th>
+                <th>Clicks</th>
+                <th>Risk</th>
+                <th>Expiry</th>
+                <th>Last Opened</th>
+                <th>Risk Score</th>
+                <th>Reasons</th>
+                <th>Clicks</th>
+            </tr>
 
-    <div class="wrapper">
+            {% for link in links %}
+            <tr>
+                <td>{{link.short_code}}</td>
+                <td>{{link.original_url}}</td>
+                <td>{{link.clicks}}</td>
+                <td>{{link.risk_level}}</td>
+                <td>{{link.expiry}}</td>
+                <td>{{link.last_opened}}</td>
+                <td>{{link.score}}</td>
+                <td>{{link.clicks}}</td>
+                <td>{{link.reasons}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
 
-        <!-- STATS -->
-        <div class="stats">
-            <div class="card">
-                <h3>Total Links</h3>
-                <p>{{total}}</p>
-            </div>
-
-            <div class="card">
-                <h3>Total Clicks</h3>
-                <p>{{clicks}}</p>
-            </div>
-        </div>
-
-        <!-- TABLE -->
-        <div class="card">
-            <h3>Your Links</h3>
-            <p class="small">Manage all your shortened URLs</p>
-
-            <table>
-                <tr>
-                    <th>Code</th>
-                    <th>Original URL</th>
-                    <th>Clicks</th>
-                    <th>Risk</th>
-                    <th>Last Opened</th>
-                    <th>Action</th>
-                </tr>
-
-                {% for link in links %}
-                <tr>
-                    <td>{{link.short_code}}</td>
-                    <td style="word-break:break-all;">{{link.original_url}}</td>
-                    <td>{{link.cclicks}}</td>
-                    <td>{{link.risk_level}}</td>
-                    <td>{{link.last_opened}}</td>
-                    <td>
-                        <button onclick="del('{{link.id}}')">Delete</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-
-    </div>
-
-    <script>
-
-        // 🔐 JWT CHECK
-        const token = localStorage.getItem("token");
-        if (!token) {
-            window.location = "/";
-        }
-
-        // logout
-        function logout() {
-            localStorage.removeItem("token");
-            window.location = "/";
-        }
-
-        // delete
-        function del(id) {
-            fetch("/api/delete/" + id, {
-                method: "DELETE",
-                headers: {
-                    Authorization: "Bearer " + token
-                }
-            }).then(() => location.reload());
-        }
-
-    </script>
-
-</body>
-
-</html>
+    </html>
