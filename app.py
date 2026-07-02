@@ -8,7 +8,7 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
-BASE_URL = "https://smart-url-shortener-1.onrender.com"
+BASE_URL = os.getenv("BASE_URL")
 
 app = Flask(__name__)
 
