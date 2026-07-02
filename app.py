@@ -11,15 +11,9 @@ from auth import auth
 BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "mysecretkey")
-
+app.config["JWT_SECRET_KEY"] = "mysecretkey"
 jwt = JWTManager(app)
 app.register_blueprint(auth)
-
-
-@app.route("/test")
-def test():
-    return "Server working"
 
 
 def create_tables():
@@ -38,7 +32,6 @@ def create_tables():
                    original_url TEXT,
                    short_code VARCHAR(50) UNIQUE,
                    expiry DATETIME,
-                   password VARCHAR(255),
                    one_time INT,
                    cclicks INT DEFAULT 0,
                    last_opened DATETIME,
@@ -58,6 +51,11 @@ def create_tables():
 
 create_tables()
 
+
+def generate_code():
+    return "".join(random.choices(string.ascii_letters + string.digits, k=6))
+
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 QR_FOLDER = os.path.join(BASE_DIR, "static", "qr")
@@ -73,6 +71,21 @@ def generate_qr(url, code):
 
 def generate_code():
     return "".join(random.choices(string.ascii_letters + string.digits, k=6))
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/test")
+def test():
+    return "Server working"
+
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 
 
 def ai_risk(url):
@@ -96,11 +109,6 @@ def ai_risk(url):
         return "Suspicious", score, reasons
     else:
         return "Safe", score, reasons
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
 
 
 @app.route("/<code>")
@@ -160,23 +168,6 @@ def redirect_url(code):
         return f"<h2>Server Error: {str(e)}</h2>", 500
 
 
-@app.route("/dashboard")
-@jwt_required()
-def dashboard():
-    user_id = get_jwt_identity()
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
-    links = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) AS total FROM urls WHERE user_id=%s", (user_id,))
-    total = cursor.fetchone()["total"]
-    cursor.execute(
-        "SELECT SUM(cclicks) AS clicks FROM urls WHERE user_id = %s", (user_id,)
-    )
-    clicks = cursor.fetchone()["clicks"] or 0
-    return render_template("dashboard.html", links=links, total=total, clicks=clicks)
-
-
 @app.route("/api/delete/<int:id>", methods=["DELETE"])
 @jwt_required()
 def delete_url(id):
@@ -198,6 +189,7 @@ def shorten():
         return jsonify({"error": "URL is required"}), 400
     db = get_db()
     cursor = db.cursor()
+    code = generate_code()
     cursor.execute("SELECT short_code FROM urls WHERE original_url=%s", (url,))
     existing = cursor.fetchone()
     if existing:

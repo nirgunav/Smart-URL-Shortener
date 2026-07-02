@@ -25,10 +25,7 @@ def register():
         (username, hashed.decode("utf-8")),
     )
     db.commit()
-    cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
-    user = cursor.fetchone()
-    token = create_access_token(identity=str(user[0]))
-    return jsonify({"message": "Account created. Please login!", "token": token})
+    return jsonify({"message": "Account created. Please login!"})
 
 
 @auth.route("/login", methods=["POST"])
