@@ -23,23 +23,42 @@
                 <th>Last Opened</th>
                 <th>Risk Score</th>
                 <th>Reasons</th>
-                <th>Clicks</th>
+                <th>Browser</th>
+                <th>Visitor IP</th>
+                <th>Delete</th>
             </tr>
 
             {% for link in links %}
             <tr>
                 <td>{{link.short_code}}</td>
                 <td>{{link.original_url}}</td>
-                <td>{{link.clicks}}</td>
+                <td>{{link.cclicks}}</td>
                 <td>{{link.risk_level}}</td>
                 <td>{{link.expiry}}</td>
                 <td>{{link.last_opened}}</td>
                 <td>{{link.score}}</td>
-                <td>{{link.clicks}}</td>
                 <td>{{link.reasons}}</td>
+                <td>{{link.browser}}</td>
+                <td>{{link.visitor_ip}}</td>
+                <td>
+                    <button onclick="deleteLink('{{link.id}}')">Delete</button>
+                </td>
             </tr>
             {% endfor %}
         </table>
+        <script>
+            function deleteLink(id) {
+
+                fetch("/api/delete/" + id, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                    .then(() => location.reload());
+
+            }
+        </script>
     </body>
 
     </html>

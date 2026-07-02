@@ -1,7 +1,7 @@
 Flask
 gunicorn
-psycopg2-binary
+mysql-connector-python
 flask-jwt-extended
 bcrypt
 qrcode
-pillow
+Pillow

@@ -21,33 +21,32 @@ def test():
 def create_tables():
     db = get_db()
     cursor = db.cursor()
-    cursor.execute(
-        """ 
-                   CREATE TABLE IF NOT EXISTS users (
-                   id SERIAL PRIMARY KEY,
-                   username TEXT UNIQUE,
-                   password TEXT
-                   );
-                   """
-    )
-    cursor.execute(
-        """
-                   CREATE TABLE IF NOT EXISTS urls (
-                   id SERIAL PRIMARY KEY,
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+         id INT AUTO_INCREMENT PRIMARY KEY,
+         username VARCHAR(100) UNIQUE,
+         password VARCHAR(255)
+)
+""")
+    cursor.execute(""" 
+            CREATE TABLE IF NOT EXISTS urls (
+                   id INT AUTO_INCREMENT PRIMARY KEY,
                    original_url TEXT,
-                   short_code TEXT UNIQUE,
-                   expiry TIMESTAMP,
-                   password TEXT,
-                   one_time INTEGER,
-                   cclicks INTEGER DEFAULT 0,
-                   last_opened TIMESTAMP,
-                   user_id INTEGER,
-                   risk_level TEXT,
-                   score INTEGER,
+                   short_code VARCHAR(50) UNIQUE,
+                   expiry DATETIME,
+                   password VARCHAR(255),
+                   one_time INT,
+                   cclicks INT DEFAULT 0,
+                   last_opened DATETIME,
+                   visitor_ip TEXT,
+                   browser TEXT,
+                   user_id INT,
+                   risk_level VARCHAR(30),
+                   score INT,
                    reasons TEXT
-                   );
-                   """
-    )
+);
+                   """)
+
     db.commit()
     cursor.close()
     db.close()
@@ -121,6 +120,32 @@ def redirect_url(code):
         if not result:
             return "<h2> Link Not Found</h2>", 404
         original_url = result[0]
+        expiry = result[1]
+        password = result[2]
+        one_time = result[3]
+        clicks = result[4]
+        ip = request.remote_addr
+        browser = request.headers.get("User-Agent")
+        if expiry and datetime.now() > expiry:
+            return "<h2>This link has expired.</h2>", 403
+        if password:
+            entered = request.args.get("password")
+
+            if entered != password:
+                return """
+              <h2>Password Protected Link</h2>
+
+              <form>
+                  <input type='password'
+                   name='password'
+                   placeholder='Enter Password'>
+                   <button type='submit'>
+                Open Link
+               </button>
+               </form>
+                """
+        if one_time and clicks >= 1:
+            return "<h2>This one-time link has already been used.</h2>", 403
         if not original_url.startswith("http://") and not original_url.startswith(
             "https://"
         ):
@@ -129,12 +154,21 @@ def redirect_url(code):
             """
             UPDATE urls 
             SET cclicks = cclicks + 1,
-                last_opened = NOW()
+              last_opened = NOW(),
+              visitor_ip = %s,
+              browser = %s
             WHERE short_code=%s
             """,
-            (code,),
+            (
+                ip,
+                browser,
+                code,
+            ),
         )
         db.commit()
+        if one_time:
+            cursor.execute("DELETE FROM urls WHERE short_code=%s", (code,))
+            db.commit()
         print("REDIRECTING TO:", original_url)
         return redirect(original_url)
     except Exception as e:
@@ -147,13 +181,13 @@ def redirect_url(code):
 def dashboard():
     user_id = get_jwt_identity()
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
     cursor.execute("SELECT COUNT(*) AS total FROM urls")
-    total = cursor.fetchone()[0]
+    total = cursor.fetchone()["total"]
     cursor.execute("SELECT SUM(cclicks) AS clicks FROM urls")
-    clicks = cursor.fetchone()[0]
+    clicks = cursor.fetchone()["clicks"] or 0
     return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 
 
@@ -195,7 +229,7 @@ def shorten():
             }
         )
     custom = data.get("custom")
-    password = data.get("password")
+    password = data.get("password") or None
     expiry = data.get("expiry")
     one_time = 1 if data.get("one_time") else 0
     if expiry and expiry.strip():
