@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, jsonify
 from db import get_db
 import random, string
-from datetime import datetime, timedelta
+from datetime import datetime
 import qrcode
-from PIL import Image
 import os
+
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
@@ -12,37 +12,41 @@ BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config["JWT_SECRET_KEY"] = "mysecretkey"
+
 jwt = JWTManager(app)
 app.register_blueprint(auth)
 
 
+# ---------------- DB ----------------
 def create_tables():
     db = get_db()
     cursor = db.cursor()
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
-         id INT AUTO_INCREMENT PRIMARY KEY,
-         username VARCHAR(100) UNIQUE,
-         password VARCHAR(255)
-)
-""")
-    cursor.execute(""" 
-            CREATE TABLE IF NOT EXISTS urls (
-                   id INT AUTO_INCREMENT PRIMARY KEY,
-                   original_url TEXT,
-                   short_code VARCHAR(50) UNIQUE,
-                   expiry DATETIME,
-                   one_time INT,
-                   cclicks INT DEFAULT 0,
-                   last_opened DATETIME,
-                   visitor_ip TEXT,
-                   browser TEXT,
-                   user_id INT,
-                   risk_level VARCHAR(30),
-                   score INT,
-                   reasons TEXT
-);
-                   """)
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) UNIQUE,
+        password VARCHAR(255)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS urls (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        original_url TEXT,
+        short_code VARCHAR(50) UNIQUE,
+        expiry DATETIME,
+        one_time INT,
+        cclicks INT DEFAULT 0,
+        last_opened DATETIME,
+        visitor_ip TEXT,
+        browser TEXT,
+        user_id INT,
+        risk_level VARCHAR(30),
+        score INT,
+        reasons TEXT
+    )
+    """)
 
     db.commit()
     cursor.close()
@@ -52,57 +56,30 @@ def create_tables():
 create_tables()
 
 
+# ---------------- HELPERS ----------------
 def generate_code():
     return "".join(random.choices(string.ascii_letters + string.digits, k=6))
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-QR_FOLDER = os.path.join(BASE_DIR, "static", "qr")
-os.makedirs(QR_FOLDER, exist_ok=True)
-
-
-def generate_qr(url, code):
-    img = qrcode.make(url)
-    qr_path = f"{QR_FOLDER}/{code}.png"
-    img.save(qr_path)
-    return qr_path
-
-
-def generate_code():
-    return "".join(random.choices(string.ascii_letters + string.digits, k=6))
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@app.route("/test")
-def test():
-    return "Server working"
-
-
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
 
 
 def ai_risk(url):
     score = 0
     reasons = []
+
     risky_words = ["login", "bank", "verify", "free", "password", "account"]
+
     for word in risky_words:
         if word in url.lower():
             score += 2
             reasons.append(f"Contains suspicious word: {word}")
-    digit_count = sum(c.isdigit() for c in url)
-    if digit_count > 5:
+
+    if sum(c.isdigit() for c in url) > 5:
         score += 1
-        reasons.append("Too many numbers in URL")
+        reasons.append("Too many numbers")
+
     if "https" not in url:
         score += 1
-        reasons.append("Missing HTTPS pattern,Not Secure")
+        reasons.append("Not secure (no HTTPS)")
+
     if score >= 4:
         return "Dangerous", score, reasons
     elif score >= 2:
@@ -111,161 +88,86 @@ def ai_risk(url):
         return "Safe", score, reasons
 
 
-@app.route("/<code>")
-def redirect_url(code):
-    try:
-
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute(
-            """
-            SELECT original_url, expiry, one_time, cclicks
-            FROM urls
-            WHERE short_code=%s
-            """,
-            (code,),
-        )
-        result = cursor.fetchone()
-        if not result:
-            return "<h2> Link Not Found</h2>", 404
-        original_url = result[0]
-        expiry = result[1]
-        one_time = result[2]
-        clicks = result[3]
-        ip = request.remote_addr
-        browser = request.headers.get("User-Agent")
-        if expiry and datetime.now() > expiry:
-            return "<h2>This link has expired.</h2>", 403
-        if one_time and clicks >= 1:
-            return "<h2>This one-time link has already been used.</h2>", 403
-        if not original_url.startswith("http://") and not original_url.startswith(
-            "https://"
-        ):
-            original_url = "https://" + original_url
-        cursor.execute(
-            """
-            UPDATE urls 
-            SET cclicks = cclicks + 1,
-              last_opened = NOW(),
-              visitor_ip = %s,
-              browser = %s
-            WHERE short_code=%s
-            """,
-            (
-                ip,
-                browser,
-                code,
-            ),
-        )
-        db.commit()
-        if one_time:
-            cursor.execute("DELETE FROM urls WHERE short_code=%s", (code,))
-            db.commit()
-        print("REDIRECTING TO:", original_url)
-        return redirect(original_url)
-    except Exception as e:
-        print("REDIRECT ERROR:", repr(e))
-        return f"<h2>Server Error: {str(e)}</h2>", 500
+# ---------------- ROUTES ----------------
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 
-@app.route("/api/delete/<int:id>", methods=["DELETE"])
-@jwt_required()
-def delete_url(id):
-    user_id = get_jwt_identity()
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM urls WHERE id=%s AND user_id=%s", (id, user_id))
-    db.commit()
-    return jsonify({"message": "Deleted"})
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
 
+# ---------------- SHORTEN ----------------
 @app.route("/api/shorten", methods=["POST"])
 @jwt_required()
 def shorten():
     user_id = get_jwt_identity()
     data = request.json
     url = data.get("url")
+
     if not url:
-        return jsonify({"error": "URL is required"}), 400
+        return jsonify({"error": "URL required"}), 400
+
     db = get_db()
     cursor = db.cursor()
+
     code = generate_code()
-    cursor.execute("SELECT short_code FROM urls WHERE original_url=%s", (url,))
-    existing = cursor.fetchone()
-    if existing:
-        risk_level, score, reasons = ai_risk(url)
-        return jsonify(
-            {
-                "short_url": f"{BASE_URL}/{existing[0]}",
-                "message": "Already Shortened before",
-                "qr": f"/static/qr/{existing[0]}.png",
-                "risk_level": risk_level,
-                "score": score,
-                "reasons": reasons,
-                "clicks": 0,
-                "last_opened": "Already exists",
-            }
-        )
-    custom = data.get("custom")
-    expiry = data.get("expiry")
-    one_time = 1 if data.get("one_time") else 0
-    if expiry and expiry.strip():
-        expiry = datetime.strptime(expiry, "%Y-%m-%d")
-    else:
-        expiry = None
 
     risk_level, score, reasons = ai_risk(url)
-    if risk_level == "Dangerous":
-        return jsonify({"error": "Blocked dangerous URL"})
-    code = custom if custom else generate_code()
-    cursor.execute("SELECT id FROM urls WHERE short_code=%s", (code,))
-    if cursor.fetchone():
-        code = generate_code()
+
     cursor.execute(
         """
-        INSERT INTO urls (original_url, short_code, expiry, one_time,user_id, risk_level, score, reasons) 
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        INSERT INTO urls (original_url, short_code, user_id, risk_level, score, reasons)
+        VALUES (%s,%s,%s,%s,%s,%s)
     """,
-        (
-            url,
-            code,
-            expiry,
-            one_time,
-            user_id,
-            risk_level,
-            score,
-            ",".join(reasons),
-        ),
+        (url, code, user_id, risk_level, score, ",".join(reasons)),
     )
+
     db.commit()
-    short_url = f"{BASE_URL}/{code}"
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
-    qr.add_data(short_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    logo_path = os.path.join(BASE_DIR, "static", "qr", "logo.png")
-    if os.path.exists(logo_path):
-        logo = Image.open(logo_path).convert("RGBA")
-        qr_w, qr_h = img.size
-        logo_size = qr_w // 4
-        logo = logo.resize((logo_size, logo_size))
-        pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
-        img.paste(logo, pos, mask=logo)
-    qr_path = os.path.join(QR_FOLDER, f"{code}.png")
-    img.save(qr_path)
+
     return jsonify(
         {
             "short_url": f"{BASE_URL}/{code}",
-            "qr": f"{BASE_URL}/static/qr/{code}.png",
             "risk_level": risk_level,
             "score": score,
             "reasons": reasons,
             "clicks": 0,
-            "last_opened": "Not opened yet",
+            "last_opened": "Never",
         }
     )
 
 
+# ---------------- DELETE ----------------
+@app.route("/api/delete/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_url(id):
+    user_id = get_jwt_identity()
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("DELETE FROM urls WHERE id=%s AND user_id=%s", (id, user_id))
+
+    db.commit()
+    return jsonify({"message": "Deleted"})
+
+
+# ---------------- REDIRECT ----------------
+@app.route("/<code>")
+def redirect_url(code):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT original_url FROM urls WHERE short_code=%s", (code,))
+    result = cursor.fetchone()
+
+    if not result:
+        return "Not Found", 404
+
+    return redirect(result[0])
+
+
 if __name__ == "__main__":
-    create_tables()
     app.run(host="0.0.0.0", port=10000)
