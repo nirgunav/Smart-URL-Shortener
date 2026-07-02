@@ -7,15 +7,14 @@ from PIL import Image
 import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token
 
 BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "my-secret-key")
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "mysecretkey")
 
 jwt = JWTManager(app)
+app.register_blueprint(auth)
 
 
 @app.route("/test")
@@ -58,11 +57,6 @@ def create_tables():
 
 
 create_tables()
-
-
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-
-app.register_blueprint(auth)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -167,15 +161,18 @@ def redirect_url(code):
 
 
 @app.route("/dashboard")
+@jwt_required()
 def dashboard():
     user_id = get_jwt_identity()
     db = get_db()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM urls WHERE user_id=%s ORDER BY id DESC", (user_id,))
     links = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) AS total FROM urls")
+    cursor.execute("SELECT COUNT(*) AS total FROM urls WHERE user_id=%s", (user_id,))
     total = cursor.fetchone()["total"]
-    cursor.execute("SELECT SUM(cclicks) AS clicks FROM urls")
+    cursor.execute(
+        "SELECT SUM(cclicks) AS clicks FROM urls WHERE user_id = %s", (user_id,)
+    )
     clicks = cursor.fetchone()["clicks"] or 0
     return render_template("dashboard.html", links=links, total=total, clicks=clicks)
 

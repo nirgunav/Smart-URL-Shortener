@@ -15,34 +15,20 @@ def register():
         return jsonify({"error": "Username and password required"}), 400
     db = get_db()
     cursor = db.cursor()
-    cursor.execute(
-        "SELECT id, password FROM users WHERE username=%s",
-        (username,),
-    )
+    cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
     existing_user = cursor.fetchone()
     if existing_user:
-        stored_password = existing_user[1]
-        if isinstance(stored_password, str):
-            stored_password = stored_password.encode("utf-8")
-        if bcrypt.checkpw(password.encode("utf-8"), stored_password):
-            token = create_access_token(identity=str(existing_user[0]))
-            return jsonify(
-                {"message": "User already exists, logged in", "token": token}
-            )
-        return jsonify({"error": "Username already exists"}), 400
+        return jsonify({"error": "Username already exists. Please login"}), 400
     hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     cursor.execute(
         "INSERT INTO users(username,password) VALUES(%s,%s)",
         (username, hashed.decode("utf-8")),
     )
     db.commit()
-    cursor.execute(
-        "SELECT id FROM users WHERE username=%s",
-        (username,),
-    )
+    cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
     user = cursor.fetchone()
-    token = create_access_token(identity=user[0])
-    return jsonify({"message": "User registered successfully", "token": token})
+    token = create_access_token(identity=str(user[0]))
+    return jsonify({"message": "Account created. Please login!", "token": token})
 
 
 @auth.route("/login", methods=["POST"])

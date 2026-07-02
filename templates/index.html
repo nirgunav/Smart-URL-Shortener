@@ -154,7 +154,8 @@
                 .then(d => {
                     if (d.token) {
                         localStorage.setItem("token", d.token);
-                        window.location = "/dashboard";
+                       alert("Account created. Please login now.");
+                       showLogin();
                     } else alert(d.error);
                 });
         }
