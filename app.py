@@ -8,7 +8,7 @@ import os
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from auth import auth
 
-BASE_URL = "https://smart-url-shortener-74yd.onrender.com"
+BASE_URL = "https://smart-url-shortener-1.onrender.com"
 
 app = Flask(__name__)
 
@@ -55,7 +55,7 @@ def create_tables():
 create_tables()
 
 
-app.config["JWT_SECRET_KEY"] = "super-secret-key-very-long-at-least-32-characters"
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 app.register_blueprint(auth)
 
