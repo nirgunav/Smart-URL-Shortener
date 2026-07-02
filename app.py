@@ -59,7 +59,9 @@ app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 app.register_blueprint(auth)
 
-QR_FOLDER = "static/qr"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+QR_FOLDER = os.path.join(BASE_DIR, "static", "qr")
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 
@@ -110,7 +112,7 @@ def redirect_url(code):
         cursor = db.cursor()
         cursor.execute(
             """
-            SELECT original_url, expiry, password, one_time, cclicks
+            SELECT original_url, expiry, one_time, cclicks
             FROM urls
             WHERE short_code=%s
             """,
@@ -121,8 +123,8 @@ def redirect_url(code):
             return "<h2> Link Not Found</h2>", 404
         original_url = result[0]
         expiry = result[1]
-        one_time = result[3]
-        clicks = result[4]
+        one_time = result[2]
+        clicks = result[3]
         ip = request.remote_addr
         browser = request.headers.get("User-Agent")
         if expiry and datetime.now() > expiry:
@@ -248,20 +250,20 @@ def shorten():
     qr.add_data(short_url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    logo_path = "static/logo.png"
+    logo_path = os.path.join(BASE_DIR, "static", "logo.png")
     if os.path.exists(logo_path):
-        logo = Image.open("static/logo.png").convert("RGBA")
+        logo = Image.open(logo_path).convert("RGBA")
         qr_w, qr_h = img.size
         logo_size = qr_w // 4
         logo = logo.resize((logo_size, logo_size))
         pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
         img.paste(logo, pos, mask=logo)
-    qr_path = f"{QR_FOLDER}/{code}.png"
+    qr_path = os.path.join(QR_FOLDER, f"{code}.png")
     img.save(qr_path)
     return jsonify(
         {
             "short_url": f"{BASE_URL}/{code}",
-            "qr": f"/{qr_path}",
+            "qr": f"/static/qr/{code}.png",
             "risk_level": risk_level,
             "score": score,
             "reasons": reasons,
