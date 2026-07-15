@@ -23,33 +23,30 @@ def create_tables():
     cursor = db.cursor()
     cursor.execute(""" 
                    CREATE TABLE IF NOT EXISTS users (
-                   id SERIAL PRIMARY KEY,
-                   username TEXT UNIQUE,
-                   password TEXT
+                   id INT AUTO_INCREMENT PRIMARY KEY,
+                   username VARCHAR(255) UNIQUE,
+                   password VARCHAR(255)
                    );
                    """)
     cursor.execute("""
                    CREATE TABLE IF NOT EXISTS urls (
-                   id SERIAL PRIMARY KEY,
+                   id INT AUTO_INCREMENT PRIMARY KEY,
                    original_url TEXT,
-                   short_code TEXT UNIQUE,
-                   expiry TIMESTAMP,
-                   password TEXT,
-                   one_time INTEGER,
-                   cclicks INTEGER DEFAULT 0,
-                   last_opened TIMESTAMP,
-                   user_id INTEGER,
-                   risk_level TEXT,
-                   score INTEGER,
+                   short_code VARCHAR(50) UNIQUE,
+                   expiry DATETIME,
+                   password VARCHAR(255),
+                   one_time TINYINT(1),
+                   cclicks INT DEFAULT 0,
+                   last_opened DATETIME,
+                   user_id INT,
+                   risk_level VARCHAR(250),
+                   score INT,
                    reasons TEXT
                    );
                    """)
     db.commit()
     cursor.close()
     db.close()
-
-
-create_tables()
 
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key-very-long-at-least-32-characters"
