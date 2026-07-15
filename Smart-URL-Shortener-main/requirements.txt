@@ -1,0 +1,7 @@
+Flask
+gunicorn
+mysql-connector-python
+flask-jwt-extended
+bcrypt
+qrcode
+Pillow

@@ -1,0 +1,35 @@
+[33m9a80ebd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m FINAL
+[33m230a39e[m CHANGED CODE
+[33m4291a4a[m SAVED CHANGES IN CODE
+[33m4256586[m CHANGES TO CODE
+[33m5c76ef7[m DONE WITH CHANGES
+[33mbc575d6[m DONE WITH CHANGES
+[33meca66a4[m FIXED FRONTEND LOGIN
+[33m87f9cbb[m Fixed login and database connection
+[33ma796e92[m CODE WITH PROPER STRUCTURE
+[33m12fbc34[m DONE
+[33m376ca93[m Working Code
+[33ma739a57[m Changed succesfully
+[33me3493e3[m Saved code for deployment
+[33mad09669[m PROJECT DEPLOYMENT CHANGES
+[33m8d1cf1c[m Saved code
+[33m389c197[m save
+[33m3fb5ec9[m Successful
+[33m6d90683[m done with code
+[33mb5958e4[m final
+[33m6107366[m changes saved
+[33mdd34988[m done with changes
+[33m2a5a344[m done
+[33mbcbe2c8[m Saved changes
+[33mac3d5f5[m Final working
+[33m108b0f3[m Working deployment
+[33mca0bb0c[m Changes
+[33mc06b46a[m Changes for login
+[33m8f2ea23[m fix render deployment + postgres integration
+[33m86c3bbf[m fix folder rename for flask templates
+[33m3899c37[m fix templates folder
+[33m41eb13f[m create tables automatically
+[33m8308823[m updated for deployment
+[33ma3a2c38[m Added gitignore and cleaned files
+[33m779a5c0[m Initial commit
+[33m2220af3[m[33m ([m[1;32mmaster[m[33m)[m Initial commit - URL Shortener project

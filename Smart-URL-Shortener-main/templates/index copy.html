@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SmartLink</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0b1220;
+            color: white;
+        }
+
+        /* TOP BAR */
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background: #0f172a;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #38bdf8;
+            letter-spacing: 2px;
+        }
+
+        /* MAIN */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 85vh;
+        }
+
+        /* CARD */
+        .card {
+            width: 380px;
+            padding: 25px;
+            background: #111827;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* INPUT */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+            background: #0b1220;
+            color: white;
+        }
+
+        /* BUTTON */
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        /* TOGGLE */
+        .toggle {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .toggle button {
+            width: 48%;
+            background: #1f2937;
+        }
+
+        .toggle button.active {
+            background: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="nav">
+        <div class="logo">SMARTLINK</div>
+        <div>Secure URL Shortener</div>
+    </div>
+
+    <div class="container">
+
+        <div class="card">
+
+            <div class="toggle">
+                <button id="loginBtn" class="active" onclick="showLogin()">Login</button>
+                <button id="signupBtn" onclick="showSignup()">Signup</button>
+            </div>
+
+            <!-- LOGIN -->
+            <div id="loginBox">
+                <input id="loginUser" placeholder="Username">
+                <input id="loginPass" type="password" placeholder="Password">
+                <button onclick="login()">Login</button>
+            </div>
+
+            <!-- SIGNUP -->
+            <div id="signupBox" style="display:none;">
+                <input id="suUser" placeholder="Username">
+                <input id="suPass" type="password" placeholder="Password">
+                <button onclick="signup()">Create Account</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        function showLogin() {
+            document.getElementById("loginBox").style.display = "block";
+            document.getElementById("signupBox").style.display = "none";
+
+            document.getElementById("loginBtn").classList.add("active");
+            document.getElementById("signupBtn").classList.remove("active");
+        }
+
+        function showSignup() {
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("signupBox").style.display = "block";
+
+            document.getElementById("signupBtn").classList.add("active");
+            document.getElementById("loginBtn").classList.remove("active");
+        }
+
+        function signup() {
+            fetch("/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("suUser").value,
+                    password: document.getElementById("suPass").value
+                })
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.message) {
+                        alert(d.message);
+                        showLogin();
+                    } else {
+                        alert(d.error);
+                    }
+                });
+        }
+
+        function login() {
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("loginUser").value,
+                    password: document.getElementById("loginPass").value
+                })
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.token) {
+                        localStorage.setItem("token", d.token);
+                        window.location = "/dashboard";
+                    } else alert(d.error);
+                });
+        }
+
+    </script>
+
+</body>
+
+</html>

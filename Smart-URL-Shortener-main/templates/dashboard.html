@@ -1,0 +1,45 @@
+<DOCTYPE html>
+    <html>
+
+    <head>
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
+
+    <body>
+        <div style="margin:20px;">
+            <h2>Dashboard Stats</h2>
+            <p>Total Links: {{total}}</p>
+            <p>Total Clicks: {{clicks}}</p>
+        </div>
+        <h2>All Links</h2>
+        <table border="1" style="margin:auto;width:80%;">
+            <tr>
+                <th>Short Code</th>
+                <th>Original URL</th>
+                <th>Clicks</th>
+                <th>Risk</th>
+                <th>Expiry</th>
+                <th>Last Opened</th>
+                <th>Risk Score</th>
+                <th>Reasons</th>
+                <th>Clicks</th>
+            </tr>
+
+            {% for link in links %}
+            <tr>
+                <td>{{link.short_code}}</td>
+                <td>{{link.original_url}}</td>
+                <td>{{link.clicks}}</td>
+                <td>{{link.risk_level}}</td>
+                <td>{{link.expiry}}</td>
+                <td>{{link.last_opened}}</td>
+                <td>{{link.score}}</td>
+                <td>{{link.clicks}}</td>
+                <td>{{link.reasons}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+
+    </html>
